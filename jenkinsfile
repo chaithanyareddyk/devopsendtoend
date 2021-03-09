@@ -1,0 +1,32 @@
+pipeline {
+  agent { label 'master' }
+  stages {
+    stage('Source') { // Get code
+      steps {
+        // get code from our Git repository
+        git 'https://github.com/chaithanyareddyk/devopsendtoend.git'
+      }
+    }
+    stage('Compile') { // Compile and do unit testing
+      tools {
+        maven 'Maven'
+      }
+      steps {
+        // run Gradle to execute compile and unit testing
+        sh 'mvn clean install package'
+      }
+    }
+    stage('Deploy to Tomcat'){
+      steps {
+	  sshPublisher(publishers: [sshPublisherDesc(configName: 'deployment', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker stop demo_app || true;
+ docker rm -f demo_app || true; 
+ docker image rm -f demo_app || true;
+ cd /opt/deployment;
+chmod 777 *.war;
+docker build -t demo_app .
+docker run -d --name demo_app -p 8090:8080 demo_app''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '//opt//deployment', remoteDirectorySDF: false, removePrefix: 'target', sourceFiles: '**/*.war')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+	  }
+	  }
+  }
+}
+	  
